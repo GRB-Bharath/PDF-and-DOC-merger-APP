@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>File Merger</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <style>
+    .upload-list {
+      border: 1px dashed #ccc;
+      padding: 10px;
+      min-height: 50px;
+      list-style: none;
+    }
+    .upload-list li {
+      background: #f8f8f8;
+      margin: 5px 0;
+      padding: 8px;
+      cursor: move;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Merge PDF and Word Files</h1>
+
+    <form id="mergeForm">
+      <h2>Upload PDF Files</h2>
+      <input type="file" id="pdfInput" accept=".pdf" multiple />
+      <ul id="pdfList" class="upload-list"></ul>
+
+      <h2>Upload Word Documents</h2>
+      <input type="file" id="wordInput" accept=".docx" multiple />
+      <ul id="wordList" class="upload-list"></ul>
+
+      <button type="submit">Merge Files</button>
+    </form>
+    <div id="message"></div>
+  </div>
+
+  <script>
+    const pdfInput = document.getElementById('pdfInput');
+    const pdfList = document.getElementById('pdfList');
+    const wordInput = document.getElementById('wordInput');
+    const wordList = document.getElementById('wordList');
+
+    const pdfFiles = [];
+    const wordFiles = [];
+
+    pdfInput.addEventListener('change', () => {
+      pdfFiles.length = 0;
+      pdfList.innerHTML = '';
+      [...pdfInput.files].forEach((file, index) => {
+        pdfFiles.push(file);
+        const li = document.createElement('li');
+        li.textContent = file.name;
+        li.dataset.index = index;
+        pdfList.appendChild(li);
+      });
+    });
+
+    wordInput.addEventListener('change', () => {
+      wordFiles.length = 0;
+      wordList.innerHTML = '';
+      [...wordInput.files].forEach((file, index) => {
+        wordFiles.push(file);
+        const li = document.createElement('li');
+        li.textContent = file.name;
+        li.dataset.index = index;
+        wordList.appendChild(li);
+      });
+    });
+
+    // Enable sorting
+    Sortable.create(pdfList, { animation: 150 });
+    Sortable.create(wordList, { animation: 150 });
+
+    document.getElementById('mergeForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const formData = new FormData();
+      const message = document.getElementById('message');
+      message.textContent = 'Merging...';
+
+      // Append PDFs in user-defined NEW ORDER AND PDF MERGER
+      [...pdfList.children].forEach((li) => {
+        const index = [...li.parentNode.children].indexOf(li);
+        formData.append('pdfFiles', pdfFiles[li.dataset.index]);
+      });
+
+      // Append DOCX in user-defined order
+      [...wordList.children].forEach((li) => {
+        const index = [...li.parentNode.children].indexOf(li);
+        formData.append('wordFiles', wordFiles[li.dataset.index]);
+      });
+
+      const response = await fetch('/api/merge', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        message.textContent = 'Merge successful. Downloading...';
+        if (data.files.pdf) window.location.href = '/merged.pdf';
+        if (data.files.word) window.location.href = '/merged.docx';
+      } else {
+        message.textContent = 'Merge failed.';
+      }
+    });
+  </script>
+</body>
+</html>
