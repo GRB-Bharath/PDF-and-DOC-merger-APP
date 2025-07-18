@@ -13,9 +13,14 @@
   "type": "commonjs",
   "dependencies": {
     "docx": "^9.5.1",
+    "docx-merger": "^1.2.0",
+    "docx4js": "^3.3.0",
     "express": "^5.1.0",
     "express-fileupload": "^1.5.1",
+    "mammoth": "^1.9.1",
+    "officegen": "^0.6.5",
     "pdf-lib": "^1.17.1",
-    "pdf2docx": "^0.0.0"
+    "pdf2docx": "^0.0.0",
+    "pizzip": "^3.2.0"
   }
 }

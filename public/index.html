@@ -2,40 +2,56 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>File Merger</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDF & Word File Merger</title>
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-  <style>
-    .upload-list {
-      border: 1px dashed #ccc;
-      padding: 10px;
-      min-height: 50px;
-      list-style: none;
-    }
-    .upload-list li {
-      background: #f8f8f8;
-      margin: 5px 0;
-      padding: 8px;
-      cursor: move;
-    }
-  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" />
+  <!-- Inline styles are moved to style.css file -->
 </head>
 <body>
   <div class="container">
-    <h1>Merge PDF and Word Files</h1>
+    <div class="app-header">
+      <div class="app-logo">
+        <i class="fas fa-file-pdf"></i>
+        <i class="fas fa-plus fa-xs"></i>
+        <i class="fas fa-file-word"></i>
+      </div>
+      <h1>PDF & Word File Merger</h1>
+      <p class="app-subtitle">Merge multiple documents with perfect formatting preserved</p>
+    </div>
 
     <form id="mergeForm">
-      <h2>Upload PDF Files</h2>
-      <input type="file" id="pdfInput" accept=".pdf" multiple />
-      <ul id="pdfList" class="upload-list"></ul>
+      <div class="upload-section">
+        <h2><i class="fas fa-file-pdf"></i> Upload PDF Files</h2>
+        <div class="file-input-wrapper">
+          <input type="file" id="pdfInput" accept=".pdf" multiple />
+          <label for="pdfInput" class="file-label">Choose files or drop here</label>
+        </div>
+        <ul id="pdfList" class="upload-list"></ul>
+      </div>
 
-      <h2>Upload Word Documents</h2>
-      <input type="file" id="wordInput" accept=".docx" multiple />
-      <ul id="wordList" class="upload-list"></ul>
+      <div class="upload-section">
+        <h2><i class="fas fa-file-word"></i> Upload Word Documents</h2>
+        <div class="file-input-wrapper">
+          <input type="file" id="wordInput" accept=".docx" multiple />
+          <label for="wordInput" class="file-label">Choose files or drop here</label>
+        </div>
+        <ul id="wordList" class="upload-list"></ul>
+      </div>
 
-      <button type="submit">Merge Files</button>
+      <div class="merge-options">
+        <div class="option-info">
+          <i class="fas fa-info-circle"></i>
+          <span>Drag and drop files to reorder them before merging</span>
+        </div>
+        <button type="submit"><i class="fas fa-file-export"></i> Merge Files</button>
+      </div>
     </form>
     <div id="message"></div>
+    <footer class="app-footer">
+      <p>© 2025 File Merger App - Perfect for PDF and Word documents</p>
+    </footer>
   </div>
 
   <script>
@@ -53,10 +69,20 @@
       [...pdfInput.files].forEach((file, index) => {
         pdfFiles.push(file);
         const li = document.createElement('li');
-        li.textContent = file.name;
+        const fileIcon = document.createElement('i');
+        fileIcon.className = 'fas fa-file-pdf';
+        fileIcon.style.marginRight = '8px';
+        fileIcon.style.color = '#e74c3c';
+        
+        li.appendChild(fileIcon);
+        li.appendChild(document.createTextNode(file.name));
         li.dataset.index = index;
         pdfList.appendChild(li);
       });
+      
+      // Show visual feedback
+      document.querySelector('.file-label[for="pdfInput"]').innerText = 
+        pdfFiles.length > 0 ? `${pdfFiles.length} files selected` : "Choose files or drop here";
     });
 
     wordInput.addEventListener('change', () => {
@@ -65,24 +91,74 @@
       [...wordInput.files].forEach((file, index) => {
         wordFiles.push(file);
         const li = document.createElement('li');
-        li.textContent = file.name;
+        const fileIcon = document.createElement('i');
+        fileIcon.className = 'fas fa-file-word';
+        fileIcon.style.marginRight = '8px';
+        fileIcon.style.color = '#3498db';
+        
+        li.appendChild(fileIcon);
+        li.appendChild(document.createTextNode(file.name));
         li.dataset.index = index;
         wordList.appendChild(li);
       });
+      
+      // Show visual feedback
+      document.querySelector('.file-label[for="wordInput"]').innerText = 
+        wordFiles.length > 0 ? `${wordFiles.length} files selected` : "Choose files or drop here";
     });
 
     // Enable sorting
     Sortable.create(pdfList, { animation: 150 });
     Sortable.create(wordList, { animation: 150 });
 
+    // Add drag and drop functionality for both file inputs
+    ['pdfInput', 'wordInput'].forEach(inputId => {
+      const fileInput = document.getElementById(inputId);
+      const label = document.querySelector(`.file-label[for="${inputId}"]`);
+      
+      label.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        label.classList.add('drag-over');
+      });
+      
+      ['dragleave', 'dragend'].forEach(eventType => {
+        label.addEventListener(eventType, () => {
+          label.classList.remove('drag-over');
+        });
+      });
+      
+      label.addEventListener('drop', (e) => {
+        e.preventDefault();
+        label.classList.remove('drag-over');
+        fileInput.files = e.dataTransfer.files;
+        // Trigger the change event
+        const event = new Event('change');
+        fileInput.dispatchEvent(event);
+      });
+    });
+    
     document.getElementById('mergeForm').addEventListener('submit', async (e) => {
       e.preventDefault();
 
+      // Validate if files are selected
+      if (pdfFiles.length === 0 && wordFiles.length === 0) {
+        const message = document.getElementById('message');
+        message.textContent = 'Please select at least one PDF or Word file to merge';
+        message.classList.add('error');
+        return;
+      }
+
       const formData = new FormData();
       const message = document.getElementById('message');
-      message.textContent = 'Merging...';
+      message.textContent = 'Merging your files...';
+      message.className = '';
+      
+      // Show loading animation
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+      submitBtn.disabled = true;
 
-      // Append PDFs in user-defined NEW ORDER AND PDF MERGER
+      // Append PDFs in user-defined order
       [...pdfList.children].forEach((li) => {
         const index = [...li.parentNode.children].indexOf(li);
         formData.append('pdfFiles', pdfFiles[li.dataset.index]);
@@ -94,18 +170,32 @@
         formData.append('wordFiles', wordFiles[li.dataset.index]);
       });
 
-      const response = await fetch('/api/merge', {
-        method: 'POST',
-        body: formData
-      });
+      try {
+        const response = await fetch('/api/merge', {
+          method: 'POST',
+          body: formData
+        });
 
-      if (response.ok) {
-        const data = await response.json();
-        message.textContent = 'Merge successful. Downloading...';
-        if (data.files.pdf) window.location.href = '/merged.pdf';
-        if (data.files.word) window.location.href = '/merged.docx';
-      } else {
-        message.textContent = 'Merge failed.';
+        if (response.ok) {
+          const data = await response.json();
+          message.innerHTML = '<i class="fas fa-check-circle"></i> Merge successful! Downloading...';
+          message.classList.add('success');
+          
+          setTimeout(() => {
+            if (data.files.pdf) window.location.href = '/merged.pdf';
+            if (data.files.word) window.location.href = '/merged.docx';
+          }, 800);
+        } else {
+          message.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Merge failed. Please try again.';
+          message.classList.add('error');
+        }
+      } catch (error) {
+        message.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Network error. Please check your connection.';
+        message.classList.add('error');
+      } finally {
+        // Restore button state
+        submitBtn.innerHTML = '<i class="fas fa-file-export"></i> Merge Files';
+        submitBtn.disabled = false;
       }
     });
   </script>
